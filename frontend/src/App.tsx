@@ -6,6 +6,8 @@ import { CreateActionInput, SignActionArgs } from '@bsv/sdk/wallet/Wallet.interf
 import Importer from './Importer';
 import Transaction from '@bsv/sdk/transaction/Transaction';
 import { Beef } from '@bsv/sdk/transaction/Beef';
+import { StorageProvider } from '@bsv/wallet-toolbox-client'
+import { useMNCErrorHandler } from 'metanet-react-prompt';
 
 // Instantiate a new BSV WalletClient (auto-detects wallet environment).
 const client = new WalletClient('auto');
@@ -17,63 +19,10 @@ const backgroundMusicUrl =
 // Sound effect (Wilhelm Scream or similar for "shouting" BSV):
 const shoutSoundUrl = '/shout.mp3';
 
-// Fetch the real wallet network
-const getRealWalletNetwork = async (): Promise<'mainnet' | 'testnet'> => {
-    const { network } = await client.getNetwork({});
-    return network;
-};
-
-// Derive a public "Mountaintops" address (publicly exposed in this app)
-const getMountaintopsAddress = async (): Promise<string> => {
-    const network = await getRealWalletNetwork();
-    const { publicKey } = await client.getPublicKey({
-        protocolID: [1, 'mountaintops'],
-        keyID: '1',
-        counterparty: 'anyone',
-        forSelf: true,
-    });
-    return PublicKey.fromString(publicKey).toAddress(network);
-};
-
-// Fetch BSV balance for a given address
-const fetchBSVBalance = async (address: string): Promise<number> => {
-    const network = await getRealWalletNetwork();
-    const balanceResponse = await fetch(
-        `https://api.whatsonchain.com/v1/bsv/${network === 'mainnet' ? 'main' : 'test'
-        }/address/${address}/balance`
-    );
-    const balanceJSON = await balanceResponse.json();
-    return (balanceJSON.confirmed + balanceJSON.unconfirmed) / 100000000;
-};
-
-// Send BSV to a recipient address
-const sendBSV = async (to: string, amount: number): Promise<string | undefined> => {
-    const network = await getRealWalletNetwork();
-    // Very naive network vs. address check for demo:
-    if (network === 'mainnet' && !to.startsWith('1')) {
-        alert('You are on mainnet but the recipient address does not look like a mainnet address (starting with 1)!');
-        return;
-    }
-
-    const lockingScript = new P2PKH().lock(to).toHex();
-    const { txid } = await client.createAction({
-        description: 'Shout BSV at an address',
-        outputs: [
-            {
-                lockingScript,
-                satoshis: Math.round(amount * 100000000),
-                outputDescription: 'BSV for recipient address',
-            },
-        ],
-    });
-    return txid;
-};
-
 // Main Component
 const Mountaintops: React.FC = () => {
-    const [mountaintopsAddress, setMountaintopsAddress] = useState<string | null>(
-        null
-    );
+    const handleMNCError = useMNCErrorHandler()
+    const [mountaintopsAddress, setMountaintopsAddress] = useState<string | null>(null);
     const [balance, setBalance] = useState<number>(-1);
     const [recipientAddress, setRecipientAddress] = useState<string>('');
     const [amount, setAmount] = useState<string>('');
@@ -87,6 +36,62 @@ const Mountaintops: React.FC = () => {
 
     // Track whether background music is playing
     const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+
+    // Fetch the real wallet network
+    const getRealWalletNetwork = async (): Promise<'mainnet' | 'testnet'> => {
+        try {
+            const { network } = await client.getNetwork({});
+            return network;
+        } catch (e) {
+            handleMNCError(e)
+        }
+    };
+
+    // Derive a public "Mountaintops" address (publicly exposed in this app)
+    const getMountaintopsAddress = async (): Promise<string> => {
+        const network = await getRealWalletNetwork();
+        const { publicKey } = await client.getPublicKey({
+            protocolID: [1, 'mountaintops'],
+            keyID: '1',
+            counterparty: 'anyone',
+            forSelf: true,
+        });
+        return PublicKey.fromString(publicKey).toAddress(network);
+    };
+
+    // Fetch BSV balance for a given address
+    const fetchBSVBalance = async (address: string): Promise<number> => {
+        const network = await getRealWalletNetwork();
+        const balanceResponse = await fetch(
+            `https://api.whatsonchain.com/v1/bsv/${network === 'mainnet' ? 'main' : 'test'
+            }/address/${address}/balance`
+        );
+        const balanceJSON = await balanceResponse.json();
+        return (balanceJSON.confirmed + balanceJSON.unconfirmed) / 100000000;
+    };
+
+    // Send BSV to a recipient address
+    const sendBSV = async (to: string, amount: number): Promise<string | undefined> => {
+        const network = await getRealWalletNetwork();
+        // Very naive network vs. address check for demo:
+        if (network === 'mainnet' && !to.startsWith('1')) {
+            alert('You are on mainnet but the recipient address does not look like a mainnet address (starting with 1)!');
+            return;
+        }
+
+        const lockingScript = new P2PKH().lock(to).toHex();
+        const { txid } = await client.createAction({
+            description: 'Shout BSV at an address',
+            outputs: [
+                {
+                    lockingScript,
+                    satoshis: Math.round(amount * 100000000),
+                    outputDescription: 'BSV for recipient address',
+                },
+            ],
+        });
+        return txid;
+    };
 
     // Show your address
     const handleViewAddress = async () => {
@@ -131,9 +136,11 @@ const Mountaintops: React.FC = () => {
 
             // Merge BEEF for the inputs (placeholder)
             const inputBEEF = new Beef();
+            const storageProvider = new StorageProvider()
             for (let i = 0; i < inputs.length; i++) {
                 const txid = inputs[i].outpoint.split('.')[0];
                 if (!inputBEEF.findTxid(txid)) {
+
                     // Normally you'd fetch or build BEEF for each input (omitted for brevity).
                     // inputBEEF.mergeBeef(acquiredBeef);
                 }
