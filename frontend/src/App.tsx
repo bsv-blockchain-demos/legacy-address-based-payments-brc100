@@ -5,6 +5,7 @@ import P2PKH from '@bsv/sdk/script/templates/P2PKH'
 import { CreateActionInput, SignActionArgs } from '@bsv/sdk/wallet/Wallet.interfaces';
 import Importer from './Importer'
 import Transaction from '@bsv/sdk/transaction/Transaction';
+import { Beef } from '@bsv/sdk/transaction/Beef'
 
 const client = new WalletClient('auto')
 
@@ -107,9 +108,18 @@ const Mountaintops: React.FC = () => {
                 inputDescription: 'Redeem from the Mountaintops',
                 unlockingScriptLength: 108
             }))
-            const inputBEEF = [1] // TODO: Get a complete input BEEF comprising all identified UTXOs
+            const inputBEEF = new Beef()
+            for (let i = 0; i < inputs.length; i++) {
+                const txid = inputs[i].outpoint.split('.')[0]
+                if (!inputBEEF.findTxid(txid)) {
+                    // TODO: Acquire input BEEF properly.
+                    // const envelope = await hashwrap(txid, network)
+                    // const beef = toBEEFfromEnvelope(envelope)
+                    // inputBEEF.mergeBeef(beef.beef)
+                }
+            }
             const { signableTransaction } = await client.createAction({
-                inputBEEF,
+                inputBEEF: inputBEEF.toBinary(),
                 inputs,
                 description: 'Import from the Mountaintops'
             })
