@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useRef } from 'react';
 import WalletClient from '@bsv/sdk/wallet/WalletClient';
 import PublicKey from '@bsv/sdk/primitives/PublicKey';
@@ -6,8 +7,8 @@ import { CreateActionInput, SignActionArgs } from '@bsv/sdk/wallet/Wallet.interf
 import Importer from './Importer';
 import Transaction from '@bsv/sdk/transaction/Transaction';
 import { Beef } from '@bsv/sdk/transaction/Beef';
-import { StorageProvider } from '@bsv/wallet-toolbox-client'
 import { useMNCErrorHandler } from 'metanet-react-prompt';
+import getBeefForTxid from './getBeefForTxid';
 
 // Instantiate a new BSV WalletClient (auto-detects wallet environment).
 const client = new WalletClient('auto');
@@ -43,7 +44,8 @@ const Mountaintops: React.FC = () => {
             const { network } = await client.getNetwork({});
             return network;
         } catch (e) {
-            handleMNCError(e)
+            handleMNCError(e as Error)
+            throw e
         }
     };
 
@@ -136,13 +138,11 @@ const Mountaintops: React.FC = () => {
 
             // Merge BEEF for the inputs (placeholder)
             const inputBEEF = new Beef();
-            const storageProvider = new StorageProvider()
             for (let i = 0; i < inputs.length; i++) {
                 const txid = inputs[i].outpoint.split('.')[0];
                 if (!inputBEEF.findTxid(txid)) {
-
-                    // Normally you'd fetch or build BEEF for each input (omitted for brevity).
-                    // inputBEEF.mergeBeef(acquiredBeef);
+                    const beef = await getBeefForTxid(txid, network === 'mainnet' ? 'main' : 'test')
+                    inputBEEF.mergeBeef(beef);
                 }
             }
 
@@ -180,6 +180,7 @@ const Mountaintops: React.FC = () => {
             setBalance(0);
             alert('Funds successfully imported to your real wallet!');
         } catch (e) {
+            console.error(e)
             // Abort in case something goes wrong
             if (reference) {
                 await client.abortAction({ reference });
