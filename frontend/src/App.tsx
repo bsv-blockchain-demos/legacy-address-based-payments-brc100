@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useRef } from 'react';
 import WalletClient from '@bsv/sdk/wallet/WalletClient';
@@ -130,8 +131,10 @@ const Mountaintops: React.FC = () => {
             );
             const UTXOJson = await UTXOResponse.json();
 
-            const inputs: CreateActionInput[] = UTXOJson.map((x: any) => ({
-                outpoint: `${x.tx_hash}.${x.tx_pos}`,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const outpoints: string[] = UTXOJson.map((x: any) => `${x.tx_hash}.${x.tx_pos}`)
+            const inputs: CreateActionInput[] = outpoints.map(outpoint => ({
+                outpoint,
                 inputDescription: 'Redeem from the Mountaintops',
                 unlockingScriptLength: 108,
             }));

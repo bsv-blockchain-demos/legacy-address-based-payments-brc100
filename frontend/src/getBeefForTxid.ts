@@ -1,5 +1,6 @@
-import { Beef } from '@bsv/sdk';
-import { sdk, Services, StorageProvider, StorageProviderOptions, TableCertificate, TableCertificateField, TableCertificateX, TableCommission, TableMonitorEvent, TableOutput, TableOutputBasket, TableOutputTag, TableOutputTagMap, TableProvenTx, TableProvenTxReq, TableSettings, TableSyncState, TableTransaction, TableTxLabel, TableTxLabelMap, TableUser } from '@bsv/wallet-toolbox-client'
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { Beef, ListActionsResult, ListOutputsResult } from '@bsv/sdk';
+import { sdk, Services, StorageProvider, TableCertificate, TableCertificateField, TableCertificateX, TableCommission, TableMonitorEvent, TableOutput, TableOutputBasket, TableOutputTag, TableOutputTagMap, TableProvenTx, TableProvenTxReq, TableSettings, TableSyncState, TableTransaction, TableTxLabel, TableTxLabelMap, TableUser } from '@bsv/wallet-toolbox-client'
 import { StorageGetBeefOptions } from '@bsv/wallet-toolbox-client/out/src/sdk/WalletStorage.interfaces';
 
 class ProtoStorage extends StorageProvider {
@@ -21,7 +22,7 @@ class ProtoStorage extends StorageProvider {
     }
 
     async getBeefForTxid(txid: string): Promise<Beef> {
-        const beef = this.getBeefForTransaction(txid, this.gbo)
+        const beef = await this.getBeefForTransaction(txid, this.gbo)
         return beef
     }
     override reviewStatus(_args: { agedLimit: Date; trx?: sdk.TrxToken }): Promise<{ log: string }> {
