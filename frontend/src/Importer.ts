@@ -70,8 +70,9 @@ export default class Importer implements ScriptTemplate {
                     scope: signatureScope
                 })
 
+                const hashToSign = sha256(sha256(preimage))
                 const { signature } = await client.createSignature({
-                    hashToDirectlySign: sha256(preimage),
+                    hashToDirectlySign: hashToSign,
                     protocolID: [1, 'mountaintops'],
                     keyID: '1',
                     counterparty: 'anyone'
