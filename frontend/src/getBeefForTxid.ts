@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Beef, ListActionsResult, ListOutputsResult } from '@bsv/sdk';
-import { sdk, Services, StorageProvider, TableCertificate, TableCertificateField, TableCertificateX, TableCommission, TableMonitorEvent, TableOutput, TableOutputBasket, TableOutputTag, TableOutputTagMap, TableProvenTx, TableProvenTxReq, TableSettings, TableSyncState, TableTransaction, TableTxLabel, TableTxLabelMap, TableUser } from '@bsv/wallet-toolbox-client'
+import { sdk, Services, StorageAdminStats, StorageProvider, TableCertificate, TableCertificateField, TableCertificateX, TableCommission, TableMonitorEvent, TableOutput, TableOutputBasket, TableOutputTag, TableOutputTagMap, TableProvenTx, TableProvenTxReq, TableSettings, TableSyncState, TableTransaction, TableTxLabel, TableTxLabelMap, TableUser } from '@bsv/wallet-toolbox-client'
 import { StorageGetBeefOptions } from '@bsv/wallet-toolbox-client/out/src/sdk/WalletStorage.interfaces';
 
 class ProtoStorage extends StorageProvider {
@@ -273,6 +273,9 @@ class ProtoStorage extends StorageProvider {
     }
     override getOutputTagMapsForUser(_args: sdk.FindForUserSincePagedArgs): Promise<TableOutputTagMap[]> {
         throw new Error('Method not implemented.')
+    }
+    override adminStats(_args: string): Promise<StorageAdminStats> {
+        throw new Error('Method not implemented.');
     }
 }
 
