@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useRef } from 'react';
 import WalletClient from '@bsv/sdk/wallet/WalletClient';
 import PublicKey from '@bsv/sdk/primitives/PublicKey';
@@ -62,15 +60,42 @@ const Mountaintops: React.FC = () => {
         return PublicKey.fromString(publicKey).toAddress(network);
     };
 
+    interface Utxo {
+        txid: string;
+        vout: number;
+        satoshis: number;
+    }
+
+    interface WoCAddressUnspentAll {
+        error: string,
+        address: string,
+        script: string,
+        result: {
+            height?: number,
+            tx_pos: number,
+            tx_hash: string,
+            value: number,
+            isSpentInMempoolTx: boolean,
+            status: string
+        }[]
+    }
+
+    const getUtxosForAddress = async (address: string): Promise<Utxo[]> => {
+        const network = await getRealWalletNetwork();
+        const response = await fetch(
+            `https://api.whatsonchain.com/v1/bsv/${network === 'mainnet' ? 'main' : 'test'
+            }/address/${address}/unspent/all`
+        );
+        const rp: WoCAddressUnspentAll = await response.json();
+        const utxos: Utxo[] = rp.result.filter(r => r.isSpentInMempoolTx === false).map(r => ({ txid: r.tx_hash, vout: r.tx_pos, satoshis: r.value }));
+        return utxos
+    }
+
     // Fetch BSV balance for a given address
     const fetchBSVBalance = async (address: string): Promise<number> => {
-        const network = await getRealWalletNetwork();
-        const balanceResponse = await fetch(
-            `https://api.whatsonchain.com/v1/bsv/${network === 'mainnet' ? 'main' : 'test'
-            }/address/${address}/balance`
-        );
-        const balanceJSON = await balanceResponse.json();
-        return (balanceJSON.confirmed + balanceJSON.unconfirmed) / 100000000;
+        const utxos = await getUtxosForAddress(address);
+        const balance = utxos.reduce((acc, r) => acc + r.satoshis, 0);
+        return balance / 100000000;
     };
 
     // Send BSV to a recipient address
@@ -125,14 +150,9 @@ const Mountaintops: React.FC = () => {
         let reference: string | undefined = undefined;
         try {
             const network = await getRealWalletNetwork();
-            const wocNet = network === 'testnet' ? 'test' : 'main';
-            const UTXOResponse = await fetch(
-                `https://api.whatsonchain.com/v1/bsv/${wocNet}/address/${mountaintopsAddress}/unspent`
-            );
-            const UTXOJson = await UTXOResponse.json();
+            const utxos = await getUtxosForAddress(mountaintopsAddress);
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const outpoints: string[] = UTXOJson.map((x: any) => `${x.tx_hash}.${x.tx_pos}`)
+            const outpoints: string[] = utxos.map(x => `${x.txid}.${x.vout}`)
             const inputs: CreateActionInput[] = outpoints.map(outpoint => ({
                 outpoint,
                 inputDescription: 'Redeem from the Mountaintops',
@@ -188,6 +208,7 @@ const Mountaintops: React.FC = () => {
             if (reference) {
                 await client.abortAction({ reference });
             }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const message = `Import failed: ${(e as any).message || 'unknown error'}`;
             alert(message);
         }
