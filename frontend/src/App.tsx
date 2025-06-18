@@ -8,6 +8,7 @@ import Transaction from '@bsv/sdk/transaction/Transaction';
 import { Beef } from '@bsv/sdk/transaction/Beef';
 import { useMNCErrorHandler } from 'metanet-react-prompt';
 import getBeefForTxid from './getBeefForTxid';
+import { QRCodeSVG } from 'qrcode.react';
 
 // Instantiate a new BSV WalletClient (auto-detects wallet environment).
 const client = new WalletClient('auto');
@@ -22,6 +23,7 @@ const Mountaintops: React.FC = () => {
     const [transactions, setTransactions] = useState<
         Array<{ txid: string; to: string; amount: string }>
     >([]);
+    const [isImporting, setIsImporting] = useState<boolean>(false);
 
     // Fetch the real wallet network
     const getRealWalletNetwork = async (): Promise<'mainnet' | 'testnet'> => {
@@ -132,6 +134,9 @@ const Mountaintops: React.FC = () => {
             alert('No money to import!');
             return;
         }
+        
+        // Set loading state
+        setIsImporting(true);
 
         let reference: string | undefined = undefined;
         try {
@@ -141,7 +146,7 @@ const Mountaintops: React.FC = () => {
             const outpoints: string[] = utxos.map(x => `${x.txid}.${x.vout}`)
             const inputs: CreateActionInput[] = outpoints.map(outpoint => ({
                 outpoint,
-                inputDescription: 'Redeem from the Mountaintops',
+                inputDescription: 'Redeem from the Legacy Bridge',
                 unlockingScriptLength: 108,
             }));
 
@@ -159,7 +164,7 @@ const Mountaintops: React.FC = () => {
             const { signableTransaction } = await client.createAction({
                 inputBEEF: inputBEEF.toBinary(),
                 inputs,
-                description: 'Import from the Mountaintops',
+                description: 'Import from the Legacy Bridge',
             });
 
             reference = signableTransaction!.reference;
@@ -187,7 +192,7 @@ const Mountaintops: React.FC = () => {
 
             // Reset the local balance after successful import
             setBalance(0);
-            alert('Funds successfully imported to your real wallet!');
+            alert('Funds successfully imported to your local wallet!');
         } catch (e) {
             console.error(e)
             // Abort in case something goes wrong
@@ -197,6 +202,9 @@ const Mountaintops: React.FC = () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const message = `Import failed: ${(e as any).message || 'unknown error'}`;
             alert(message);
+        } finally {
+            // Reset loading state regardless of outcome
+            setIsImporting(false);
         }
     };
 
@@ -236,12 +244,12 @@ const Mountaintops: React.FC = () => {
     return (
         <div style={styles.container}>
             {/* Main content panel */}
-            <div style={styles.content}>
                 <h1 style={styles.title}>Legacy Bridge</h1>
                 <p style={styles.subtitle}>
                     Address Based BSV Payments to and from BRC-100 Wallets
                 </p>
 
+                <div style={styles.content}>
                 {/* Address and balance section */}
                 <div style={styles.section}>
                     <h3 style={styles.sectionTitle}>Receive</h3>
@@ -253,13 +261,23 @@ const Mountaintops: React.FC = () => {
                         <>
                             <p style={styles.label}>Your Address:</p>
                             <div style={styles.addressBox}>{mountaintopsAddress}</div>
+                            <div style={styles.qrCodeContainer}>
+                                <QRCodeSVG value={mountaintopsAddress || ''} size={150} bgColor="#ffffff" fgColor="#2c5282" />
+                            </div>
 
                             <div style={styles.buttonsRow}>
                                 <button style={styles.actionButton} onClick={handleGetBalance}>
                                     Get Balance
                                 </button>
-                                <button style={styles.actionButton} onClick={handleImportFunds}>
-                                    Import Funds
+                                <button 
+                                    style={{
+                                        ...styles.actionButton,
+                                        ...(isImporting ? styles.disabledButton : {})
+                                    }} 
+                                    onClick={handleImportFunds}
+                                    disabled={isImporting}
+                                >
+                                    {isImporting ? 'Importing...' : 'Import Funds'}
                                 </button>
                             </div>
 
@@ -306,7 +324,7 @@ const Mountaintops: React.FC = () => {
                         <ul style={styles.txList}>
                             {transactions.map((tx, index) => (
                                 <li key={index} style={styles.txListItem}>
-                                    <strong>TXID:</strong> {tx.txid}
+                                    <strong>TXID:</strong> <a style={styles.link} href={`https://whatsonchain.com/tx/${tx.txid}`} target="_blank" rel="noopener noreferrer">{tx.txid}</a>
                                     <br />
                                     <strong>To:</strong> {tx.to}
                                     <br />
@@ -332,11 +350,11 @@ const styles: { [key: string]: React.CSSProperties } = {
         margin: 0,
         padding: 0,
         fontFamily: `'Segoe UI', Tahoma, Geneva, Verdana, sans-serif`,
-        color: '#fff',
+        color: '#2c3e50',
         textAlign: 'center',
+        backgroundColor: '#f5f7fa',
     },
 
-    // Key background with slow panning effect
     background: {
         position: 'absolute',
         top: 0,
@@ -344,13 +362,7 @@ const styles: { [key: string]: React.CSSProperties } = {
         right: 0,
         bottom: 0,
         zIndex: -1,
-        backgroundImage:
-            'url("/mountains.jpg")',
-        backgroundRepeat: 'no-repeat',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        // Sloooow pan from left to right (30s)
-        animation: 'pan 30s infinite alternate linear',
+        backgroundColor: '#f5f7fa',
     },
 
     content: {
@@ -362,36 +374,37 @@ const styles: { [key: string]: React.CSSProperties } = {
         maxWidth: 700,
         marginLeft: 'auto',
         marginRight: 'auto',
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        borderRadius: 12,
-        boxShadow: '0 0 20px rgba(0,0,0,0.5)',
+        backgroundColor: '#ffffff',
+        borderRadius: 8,
+        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+        border: '1px solid #e1e8ed',
     },
 
     title: {
-        fontSize: '3rem',
-        margin: 0,
-        fontWeight: 700,
-        textShadow: '2px 2px 4px #000',
+        fontSize: '2.5rem',
+        margin: '2em 0 0',
+        fontWeight: 600,
+        color: '#2c5282',
     },
     subtitle: {
         marginTop: 10,
         marginBottom: 20,
         fontSize: '1.2rem',
         lineHeight: 1.4,
-        textShadow: '1px 1px 2px #000',
+        color: '#4a5568',
     },
 
     musicToggleArea: {
         marginBottom: 20,
     },
     musicButton: {
-        backgroundColor: '#4caf50',
+        backgroundColor: '#3182ce',
         border: 'none',
         padding: '10px 25px',
         fontSize: '1rem',
-        borderRadius: 8,
+        borderRadius: 4,
         cursor: 'pointer',
-        transition: 'transform 0.2s ease, background-color 0.2s ease',
+        transition: 'background-color 0.2s ease',
         color: '#fff',
         fontWeight: 600,
     },
@@ -403,7 +416,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     sectionTitle: {
         fontSize: '1.5rem',
         marginBottom: 10,
-        textShadow: '1px 1px 3px #000',
+        color: '#2c5282',
+        fontWeight: 500,
     },
 
     label: {
@@ -412,13 +426,15 @@ const styles: { [key: string]: React.CSSProperties } = {
         marginBottom: 5,
     },
     addressBox: {
-        backgroundColor: '#222',
+        backgroundColor: '#edf2f7',
         padding: '10px',
-        borderRadius: 6,
+        borderRadius: 4,
         marginBottom: 10,
         overflowWrap: 'break-word',
         fontSize: '0.9rem',
         letterSpacing: '0.5px',
+        color: '#4a5568',
+        border: '1px solid #e2e8f0',
     },
     buttonsRow: {
         display: 'flex',
@@ -427,24 +443,24 @@ const styles: { [key: string]: React.CSSProperties } = {
         gap: 10,
     },
     actionButton: {
-        backgroundColor: '#ff004c',
+        backgroundColor: '#3182ce',
         color: '#fff',
         padding: '10px 20px',
-        borderRadius: 8,
+        borderRadius: 4,
         border: 'none',
         fontSize: '1rem',
         cursor: 'pointer',
-        fontWeight: 600,
-        transition: 'transform 0.2s ease, background-color 0.2s ease',
-        boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
+        fontWeight: 500,
+        transition: 'background-color 0.2s ease',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
     },
     shoutButton: {
-        animation: 'pulse 2s infinite',
+        backgroundColor: '#4299e1',
     },
     balanceText: {
         marginTop: 15,
         fontSize: '1.1rem',
-        fontStyle: 'italic',
+        color: '#4a5568',
     },
 
     input: {
@@ -453,18 +469,18 @@ const styles: { [key: string]: React.CSSProperties } = {
         maxWidth: 400,
         margin: '10px auto',
         padding: '10px',
-        borderRadius: 6,
-        border: '2px solid #ff004c',
+        borderRadius: 4,
+        border: '1px solid #cbd5e0',
         outline: 'none',
         fontSize: '1rem',
         textAlign: 'center',
         backgroundColor: '#fff',
-        color: '#000',
+        color: '#2d3748',
     },
     emptyState: {
         marginTop: 15,
-        fontStyle: 'italic',
         fontSize: '0.95rem',
+        color: '#718096',
     },
     txList: {
         listStyle: 'none',
@@ -473,12 +489,29 @@ const styles: { [key: string]: React.CSSProperties } = {
         textAlign: 'left',
     },
     txListItem: {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        backgroundColor: '#f8fafc',
         marginBottom: 10,
         padding: 10,
-        borderRadius: 6,
+        borderRadius: 4,
         fontSize: '0.9rem',
         overflowWrap: 'break-word',
+        color: '#4a5568',
+        border: '1px solid #e2e8f0',
+    },
+    qrCodeContainer: {
+        display: 'flex',
+        justifyContent: 'center',
+        margin: '15px 0',
+    },
+    link: {
+        color: '#3182ce',
+        textDecoration: 'none',
+    },
+    disabledButton: {
+        backgroundColor: '#94a3b8',
+        cursor: 'not-allowed',
+        opacity: 0.7,
+        boxShadow: 'none',
     },
 };
 
@@ -490,33 +523,24 @@ const styles: { [key: string]: React.CSSProperties } = {
 const styleSheet = document.createElement('style');
 styleSheet.type = 'text/css';
 styleSheet.innerHTML = `
-@keyframes pan {
-  0% {
-    background-position: left center;
-  }
-  100% {
-    background-position: right center;
-  }
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); box-shadow: 0 0 5px rgba(255,0,76,0.5); }
-  50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(255,0,76,0.7); }
-  100% { transform: scale(1); box-shadow: 0 0 5px rgba(255,0,76,0.5); }
+body {
+  margin: 0;
+  background-color: #f5f7fa;
 }
 
 /* Hover effect on buttons */
 button:hover {
-  transform: scale(1.05);
+  background-color: #2b6cb0;
 }
 
 /* Active (clicked) effect on buttons */
 button:active {
-  transform: scale(0.95);
+  background-color: #2c5282;
 }
 
-body {
-  margin: 0;
+input:focus {
+  border-color: #4299e1;
+  box-shadow: 0 0 0 1px #4299e1;
 }
 `;
 document.head.appendChild(styleSheet);
