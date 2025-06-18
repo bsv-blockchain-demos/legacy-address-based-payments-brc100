@@ -12,13 +12,6 @@ import getBeefForTxid from './getBeefForTxid';
 // Instantiate a new BSV WalletClient (auto-detects wallet environment).
 const client = new WalletClient('auto');
 
-// Background music (public domain piece for demonstration):
-const backgroundMusicUrl =
-    'https://upload.wikimedia.org/wikipedia/commons/8/8f/Fur_Elise.ogg';
-
-// Sound effect (Wilhelm Scream or similar for "shouting" BSV):
-const shoutSoundUrl = '/shout.mp3';
-
 // Main Component
 const Mountaintops: React.FC = () => {
     const handleMNCError = useMNCErrorHandler()
@@ -29,13 +22,6 @@ const Mountaintops: React.FC = () => {
     const [transactions, setTransactions] = useState<
         Array<{ txid: string; to: string; amount: string }>
     >([]);
-
-    // Refs for audio elements
-    const shoutAudioRef = useRef<HTMLAudioElement>(null);
-    const bgAudioRef = useRef<HTMLAudioElement>(null);
-
-    // Track whether background music is playing
-    const [isMusicPlaying, setIsMusicPlaying] = useState(false);
 
     // Fetch the real wallet network
     const getRealWalletNetwork = async (): Promise<'mainnet' | 'testnet'> => {
@@ -229,15 +215,8 @@ const Mountaintops: React.FC = () => {
 
         const txid = await sendBSV(recipientAddress, amt);
         if (txid) {
-            // Play the "shout" sound effect
-            if (shoutAudioRef.current) {
-                shoutAudioRef.current.currentTime = 0;
-                shoutAudioRef.current.play().catch(() => {
-                    // Browser may block autoplay if no user interaction
-                });
-            }
             alert(
-                `Successfully SHOUTED ${amt} BSV from your real wallet to ${recipientAddress} with absolutely no privacy! TXID: ${txid}`
+                `Successfully sent ${amt} BSV from your wallet to ${recipientAddress} TXID: ${txid}`
             );
 
             // Record the transaction locally
@@ -254,63 +233,25 @@ const Mountaintops: React.FC = () => {
         }
     };
 
-    // Toggle background music on/off
-    const toggleBackgroundMusic = () => {
-        if (!bgAudioRef.current) return;
-
-        if (isMusicPlaying) {
-            // Pause music
-            bgAudioRef.current.pause();
-            setIsMusicPlaying(false);
-        } else {
-            // Play music
-            bgAudioRef.current.currentTime = 0;
-            bgAudioRef.current
-                .play()
-                .then(() => {
-                    setIsMusicPlaying(true);
-                })
-                .catch(() => {
-                    alert('Failed to play background music (autoplay restrictions).');
-                });
-        }
-    };
-
     return (
         <div style={styles.container}>
-            {/* "Panoramic" background container */}
-            <div style={styles.background}></div>
-
-            {/* Audio elements */}
-            <audio ref={shoutAudioRef} src={shoutSoundUrl} preload="auto" />
-            <audio ref={bgAudioRef} src={backgroundMusicUrl} loop preload="auto" />
-
             {/* Main content panel */}
             <div style={styles.content}>
-                <h1 style={styles.title}>Mountaintops</h1>
+                <h1 style={styles.title}>Legacy Bridge</h1>
                 <p style={styles.subtitle}>
-                    Shout all your transactions from the mountaintops, with <br />
-                    <span style={{ color: '#ff5757', fontWeight: 'bold' }}>
-                        ABSOLUTELY NO PRIVACY!
-                    </span>
+                    Address Based BSV Payments to and from BRC-100 Wallets
                 </p>
-
-                {/* Toggle background music button */}
-                <div style={styles.musicToggleArea}>
-                    <button style={styles.musicButton} onClick={toggleBackgroundMusic}>
-                        {isMusicPlaying ? 'Pause Background Music' : 'Play Background Music'}
-                    </button>
-                </div>
 
                 {/* Address and balance section */}
                 <div style={styles.section}>
+                    <h3 style={styles.sectionTitle}>Receive</h3>
                     {!mountaintopsAddress ? (
                         <button style={styles.actionButton} onClick={handleViewAddress}>
-                            Show My BSV Address
+                            Show Address
                         </button>
                     ) : (
                         <>
-                            <p style={styles.label}>Your Mountaintops Address (exposed):</p>
+                            <p style={styles.label}>Your Address:</p>
                             <div style={styles.addressBox}>{mountaintopsAddress}</div>
 
                             <div style={styles.buttonsRow}>
@@ -318,24 +259,24 @@ const Mountaintops: React.FC = () => {
                                     Get Balance
                                 </button>
                                 <button style={styles.actionButton} onClick={handleImportFunds}>
-                                    Import Money
+                                    Import Funds
                                 </button>
                             </div>
 
                             <p style={styles.balanceText}>
-                                Current BSV at this super-public address:{' '}
+                                BSV available from this address:{' '}
                                 {balance === -1
                                     ? 'Not checked yet!'
-                                    : `${balance} BSV (everyone can see it!)`}
+                                    : `${balance} BSV`}
                             </p>
                         </>
                     )}
                 </div>
-
-                {/* Shout BSV form */}
+            </div>
+            <div style={styles.content}>
                 <div style={styles.section}>
                     <h3 style={styles.sectionTitle}>
-                        SHOUT BSV Across To Someone:
+                        Send
                     </h3>
                     <input
                         style={styles.input}
@@ -350,16 +291,16 @@ const Mountaintops: React.FC = () => {
                         onChange={(e) => setAmount(e.target.value)}
                     />
                     <button style={{ ...styles.actionButton, ...styles.shoutButton }} onClick={handleShoutBSV}>
-                        SHOUT BSV
+                        Send
                     </button>
                 </div>
-
-                {/* List of previous shouted transactions */}
+            </div>
+            <div style={styles.content}>
                 <div style={styles.section}>
-                    <h3 style={styles.sectionTitle}>Shouted Transactions</h3>
+                    <h3 style={styles.sectionTitle}>History</h3>
                     {transactions.length === 0 ? (
                         <p style={styles.emptyState}>
-                            No transactions shouted yet... (but the world is waiting!)
+                            No transactions yet...
                         </p>
                     ) : (
                         <ul style={styles.txList}>
