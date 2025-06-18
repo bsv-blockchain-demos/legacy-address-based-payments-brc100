@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import WalletClient from '@bsv/sdk/wallet/WalletClient';
 import PublicKey from '@bsv/sdk/primitives/PublicKey';
 import P2PKH from '@bsv/sdk/script/templates/P2PKH';

@@ -1,55 +1,50 @@
-# BSV Project
+# React + TypeScript + Vite
 
-Standard BSV project structure.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-Helpful Links:
+Currently, two official plugins are available:
 
-- [LARS (for local development)](https://github.com/bitcoin-sv/lars)
-- [CARS CLI (for cloud deployment)](https://github.com/bitcoin-sv/cars-cli)
-- [RUN YOUR OWN CARS NODE](https://github.com/bitcoin-sv/cars-node)
-- [Specification for deployment-info.json](https://github.com/bitcoin-sv/BRCs/blob/master/apps/0102.md)
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## Getting Started
+## Expanding the ESLint configuration
 
-- Clone this repository
-- Run `npm i` to install dependencies
-- Run `npm run lars` to configure the local environment according to your needs
-- Use `npm run start` to spin up and start writing code
-- When you're ready to publish your project, start by running `npm run cars` and configuring one (or, especially for overlays, ideally multiple) hosting provider(s)
-- For each of your configurations, execute `npm run build` to create CARS project artifacts
-- Deploy with `npm run deploy` and your project will be online
-- Use `cars` interactively, or visit your hosting provider(s) web portals, to view logs, configure custom domains, and pay your hosting bills
-- Share your new BSV project, it is now online!
+If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
 
-## Directory Structure
+- Configure the top-level `parserOptions` property like this:
 
-The project structure is roughly as follows, although it can vary by project.
-
-```
-| - deployment-info.json
-| - package.json
-| - local-data/
-| - frontend/
-  | - package.json
-  | - webpack.config.js
-  | - src/...
-  | - public/...
-  | - build/...
-| - backend/
-  | - package.json
-  | - tsconfig.json
-  | - mod.ts
-  | - src/
-    | - contracts/...
-    | - lookup-services/...
-    | - topic-managers/...
-    | - script-templates/...
-  | - artifacts/
-  | - dist/
+```js
+export default tseslint.config({
+  languageOptions: {
+    // other options...
+    parserOptions: {
+      project: ['./tsconfig.node.json', './tsconfig.app.json'],
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+})
 ```
 
-The one constant is `deployment-info.json`.
+- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
+- Optionally add `...tseslint.configs.stylisticTypeChecked`
+- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
 
-## License
+```js
+// eslint.config.js
+import react from 'eslint-plugin-react'
 
-[Open BSV License](./LICENSE.txt)
+export default tseslint.config({
+  // Set the react version
+  settings: { react: { version: '18.3' } },
+  plugins: {
+    // Add the react plugin
+    react,
+  },
+  rules: {
+    // other rules...
+    // Enable its recommended rules
+    ...react.configs.recommended.rules,
+    ...react.configs['jsx-runtime'].rules,
+  },
+})
+```

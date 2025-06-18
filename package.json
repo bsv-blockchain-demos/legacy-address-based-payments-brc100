@@ -1,21 +1,44 @@
 {
-    "name": "@bsv/project",
-    "private": true,
-    "version": "1.0.0",
-    "description": "Standard BSV project structure",
-    "scripts": {
-        "lars": "lars",
-        "cars": "cars",
-        "lars:config": "lars config",
-        "start": "lars start",
-        "build": "cars build 1",
-        "deploy": "cars deploy now 1"
-    },
-    "keywords": [],
-    "author": "",
-    "license": "SEE LICENSE IN LICENSE.txt",
-    "devDependencies": {
-        "@bsv/cars-cli": "^1.1.4",
-        "@bsv/lars": "^1.3.0"
-    }
+  "name": "wal",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "start": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@bsv/sdk": "^1.5.2",
+    "@bsv/wallet-toolbox-client": "^1.3.14",
+    "@emotion/react": "^11.10.8",
+    "@emotion/styled": "^11.10.8",
+    "@mui/icons-material": "^5.11.0",
+    "@mui/material": "^5.11.0",
+    "@types/react": "^18.0.28",
+    "@types/react-dom": "^18.0.11",
+    "@types/react-router-dom": "^5.3.3",
+    "metanet-react-prompt": "^1.0.1",
+    "qrcode.react": "^4.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.8.0",
+    "typescript": "^4.9.5",
+    "web-vitals": "^3.3.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.17.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.16",
+    "globals": "^15.14.0",
+    "typescript": "~5.6.2",
+    "typescript-eslint": "^8.18.2",
+    "vite": "^6.0.5"
+  }
 }
