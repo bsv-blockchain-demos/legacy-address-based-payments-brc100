@@ -6,16 +6,20 @@ import { CreateActionInput, SignActionArgs } from '@bsv/sdk/wallet/Wallet.interf
 import Importer from './Importer';
 import Transaction from '@bsv/sdk/transaction/Transaction';
 import { Beef } from '@bsv/sdk/transaction/Beef';
-import { useMNCErrorHandler } from 'metanet-react-prompt';
 import getBeefForTxid from './getBeefForTxid';
 import { QRCodeSVG } from 'qrcode.react';
+import { Modal, Paper } from '@mui/material';
 
 // Instantiate a new BSV WalletClient (auto-detects wallet environment).
 const client = new WalletClient('auto');
 
 // Main Component
 const Mountaintops: React.FC = () => {
-    const handleMNCError = useMNCErrorHandler()
+    const [showDownloadModal, setShowDownloadModal] = useState(false)
+    const handleMNCError = (e: Error) => {
+        console.error(e)
+        setShowDownloadModal(true)
+    }
     const [mountaintopsAddress, setMountaintopsAddress] = useState<string | null>(null);
     const [balance, setBalance] = useState<number>(-1);
     const [recipientAddress, setRecipientAddress] = useState<string>('');
@@ -248,6 +252,19 @@ const Mountaintops: React.FC = () => {
                 <p style={styles.subtitle}>
                     Address Based BSV Payments to and from BRC-100 Wallets
                 </p>
+
+                <Modal
+                    open={showDownloadModal}
+                    onClose={() => setShowDownloadModal(false)}
+                    title="Download BRC-100 Wallet"
+                >
+                    <Paper style={{ padding: '16px', fontFamily: 'sans-serif', width: 'min(100%, 500px)', position: 'relative', margin: '25px auto' }}>
+                        <h3>Unable to Connect to Wallet</h3>
+                        <p>Please download a BRC-100 wallet to use this app</p>
+                        <a href="https://metanet.bsvb.tech">Download Metanet Desktop</a>
+                        <p>If you already have a BRC-100 wallet, please ensure it is running, and that you're using Chrome Browser.</p>
+                    </Paper>
+                </Modal>
 
                 <div style={styles.content}>
                 {/* Address and balance section */}
