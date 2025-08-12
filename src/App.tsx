@@ -49,24 +49,89 @@ const Mountaintops: React.FC = () => {
     };
 
     async function getPastTransactions () {
+        const mountaintopsAddress = await getMountaintopsAddress()
         const response = await client.listActions({
             labels: ['legacy'],
             includeOutputLockingScripts: true,
             includeOutputs: true,
+            limit: 100
         });
         console.log(response)
         setTransactions(txs => {
             const set = new Set(txs.map(tx => tx.txid))
-            const pastTxs = response.actions.map((action) => ({ 
+            const pastTxs = response.actions.map((action) => { 
+                let address = ''
+                // Try to find BSV recipient output first
+                let theOutput = action.outputs!.find(o => o.outputDescription === 'BSV for recipient address')
+                if (theOutput) {
+                    try {
+                        address = Utils.toBase58Check(Script.fromHex(theOutput!.lockingScript!).chunks[2].data as number[])
+                    } catch (error) {
+                        console.log({ error })
+                        address = ''
+                    }
+                } else {
+                    // Fallback to checking for mountaintops address output
+                    if (action.description === 'Import from the Legacy Bridge') {
+                        address = mountaintopsAddress
+                    } else {
+                        return { txid: '', to: '', amount: 0 }
+                    }
+                }
+
+                return {
                     txid: action.txid, 
-                    to: Utils.toBase58Check(Script.fromHex(action.outputs?.find(o => o.outputDescription === 'BSV for recipient address')?.lockingScript as string).chunks[2].data as number[]) ?? '', 
+                    to: address, 
                     amount: action.satoshis / 100000000 
-                }))
-            const newTxs = pastTxs.filter(tx => !set.has(tx.txid))
+                }
+            })
+            const newTxs = pastTxs.filter(tx => tx.amount !== 0 && !set.has(tx.txid))
             return [...txs, ...newTxs]
         })
     };
 
+
+    async function deepSearchAllTransactions () {
+        const mountaintopsAddress = await getMountaintopsAddress()
+        const response = await client.listActions({
+            labels: [],
+            includeOutputLockingScripts: true,
+            includeOutputs: true,
+            limit: 1000
+        });
+        console.log(response)
+        setTransactions(txs => {
+            const set = new Set(txs.map(tx => tx.txid))
+            const pastTxs = response.actions.map((action) => { 
+                let address = ''
+                // Try to find BSV recipient output first
+                let theOutput = action.outputs!.find(o => o.outputDescription === 'BSV for recipient address')
+                if (theOutput) {
+                    try {
+                        address = Utils.toBase58Check(Script.fromHex(theOutput!.lockingScript!).chunks[2].data as number[])
+                    } catch (error) {
+                        console.log({ error })
+                        address = ''
+                    }
+                } else {
+                    // Fallback to checking for mountaintops address output
+                    if (action.description === 'Import from the Legacy Bridge') {
+                        address = mountaintopsAddress
+                    } else {
+                        return { txid: '', to: '', amount: 0 }
+                    }
+                }
+
+                return {
+                    txid: action.txid, 
+                    to: address, 
+                    amount: action.satoshis / 100000000 
+                }
+            })
+            const newTxs = pastTxs.filter(tx => tx.amount !== 0 && !set.has(tx.txid))
+            return [...txs, ...newTxs]
+        })
+    };
 
     interface Utxo {
         txid: string;
@@ -354,6 +419,11 @@ const Mountaintops: React.FC = () => {
 
                     <button style={styles.actionButton} onClick={getPastTransactions}>
                         Get Past Transactions
+                    </button>
+                    <br />
+                    <br />
+                    <button style={styles.actionButton} onClick={deepSearchAllTransactions}>
+                        Deep Search All Transactions
                     </button>
                     <br />
                     <br />
