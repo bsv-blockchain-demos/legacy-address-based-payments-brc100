@@ -1,11 +1,7 @@
 import { useState } from 'react';
-import WalletClient from '@bsv/sdk/wallet/WalletClient';
-import PublicKey from '@bsv/sdk/primitives/PublicKey';
-import P2PKH from '@bsv/sdk/script/templates/P2PKH';
 import { CreateActionInput, SignActionArgs } from '@bsv/sdk/wallet/Wallet.interfaces';
 import Importer from './Importer';
-import Transaction from '@bsv/sdk/transaction/Transaction';
-import { Beef } from '@bsv/sdk/transaction/Beef';
+import { Utils, Beef, Transaction, WalletClient, PublicKey, P2PKH, Script } from '@bsv/sdk';
 import getBeefForTxid from './getBeefForTxid';
 import { QRCodeSVG } from 'qrcode.react';
 import { Modal, Paper } from '@mui/material';
@@ -25,7 +21,7 @@ const Mountaintops: React.FC = () => {
     const [recipientAddress, setRecipientAddress] = useState<string>('');
     const [amount, setAmount] = useState<string>('');
     const [transactions, setTransactions] = useState<
-        Array<{ txid: string; to: string; amount: string }>
+        Array<{ txid: string; to: string; amount: number }>
     >([]);
     const [isImporting, setIsImporting] = useState<boolean>(false);
 
@@ -51,6 +47,26 @@ const Mountaintops: React.FC = () => {
         });
         return PublicKey.fromString(publicKey).toAddress(network);
     };
+
+    async function getPastTransactions () {
+        const response = await client.listActions({
+            labels: ['legacy'],
+            includeOutputLockingScripts: true,
+            includeOutputs: true,
+        });
+        console.log(response)
+        setTransactions(txs => {
+            const set = new Set(txs.map(tx => tx.txid))
+            const pastTxs = response.actions.map((action) => ({ 
+                    txid: action.txid, 
+                    to: Utils.toBase58Check(Script.fromHex(action.outputs?.find(o => o.outputDescription === 'BSV for recipient address')?.lockingScript as string).chunks[2].data as number[]) ?? '', 
+                    amount: action.satoshis / 100000000 
+                }))
+            const newTxs = pastTxs.filter(tx => !set.has(tx.txid))
+            return [...txs, ...newTxs]
+        })
+    };
+
 
     interface Utxo {
         txid: string;
@@ -109,6 +125,7 @@ const Mountaintops: React.FC = () => {
                     outputDescription: 'BSV for recipient address',
                 },
             ],
+            labels: ['legacy', 'outbound'],
         });
         return txid;
     };
@@ -169,6 +186,7 @@ const Mountaintops: React.FC = () => {
                 inputBEEF: inputBEEF.toBinary(),
                 inputs,
                 description: 'Import from the Legacy Bridge',
+                labels: ['legacy', 'inbound'],
             });
 
             reference = signableTransaction!.reference;
@@ -237,7 +255,7 @@ const Mountaintops: React.FC = () => {
                 {
                     txid,
                     to: recipientAddress,
-                    amount: amt.toString(),
+                    amount: amt,
                 },
             ]);
             setRecipientAddress('');
@@ -333,6 +351,12 @@ const Mountaintops: React.FC = () => {
             <div style={styles.content}>
                 <div style={styles.section}>
                     <h3 style={styles.sectionTitle}>History</h3>
+
+                    <button style={styles.actionButton} onClick={getPastTransactions}>
+                        Get Past Transactions
+                    </button>
+                    <br />
+                    <br />
                     {transactions.length === 0 ? (
                         <p style={styles.emptyState}>
                             No transactions yet...
