@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  bsv-legacy-bridge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bsv-legacy-bridge
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
