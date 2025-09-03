@@ -21,24 +21,11 @@ RUN npm run build
 # Stage 2: Serve the application
 FROM nginx:alpine
 
-# Copy custom nginx config
+# Copy built application
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Create nginx configuration for SPA routing
-RUN echo 'server { \
-    listen 80; \
-    listen [::]:80; \
-    root /usr/share/nginx/html; \
-    index index.html; \
-    server_name _; \
-    location / { \
-        try_files $uri $uri/ /index.html; \
-    } \
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ { \
-        expires 1y; \
-        add_header Cache-Control "public, immutable"; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose port 80
 EXPOSE 80
