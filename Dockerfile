@@ -18,17 +18,23 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Stage 2: Serve the application
-FROM nginx:alpine
+# Stage 2: Production server
+FROM node:20-alpine
 
-# Copy built application
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Set working directory
+WORKDIR /app
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Install production dependencies for the server
+RUN npm install express compression
 
-# Expose port 80
-EXPOSE 80
+# Copy built application from builder
+COPY --from=builder /app/dist ./dist
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Copy server file
+COPY server.js .
+
+# Expose port 8080
+EXPOSE 8080
+
+# Start the server
+CMD ["node", "server.js"]
