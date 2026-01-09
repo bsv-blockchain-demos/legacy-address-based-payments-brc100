@@ -11,8 +11,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@bsv/sdk": "^1.8.2",
-    "@bsv/wallet-toolbox-client": "^1.4.4",
+    "@bsv/sdk": "^1.10.1",
+    "@bsv/wallet-toolbox-client": "^1.7.18",
     "@emotion/react": "^11.10.8",
     "@emotion/styled": "^11.10.8",
     "@mui/icons-material": "^5.11.0",
