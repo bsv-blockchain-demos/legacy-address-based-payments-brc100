@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { CreateActionInput, SignActionArgs } from '@bsv/sdk/wallet/Wallet.interfaces';
 import Importer from './Importer';
 import { Utils, Beef, Transaction, WalletClient, PublicKey, P2PKH, Script } from '@bsv/sdk';
@@ -62,7 +63,7 @@ const Mountaintops: React.FC = () => {
             const pastTxs = response.actions.map((action) => { 
                 let address = ''
                 // Try to find BSV recipient output first
-                let theOutput = action.outputs!.find(o => o.outputDescription === 'BSV for recipient address')
+                const theOutput = action.outputs!.find(o => o.outputDescription === 'BSV for recipient address')
                 if (theOutput) {
                     try {
                         address = Utils.toBase58Check(Script.fromHex(theOutput!.lockingScript!).chunks[2].data as number[])
@@ -105,7 +106,7 @@ const Mountaintops: React.FC = () => {
             const pastTxs = response.actions.map((action) => { 
                 let address = ''
                 // Try to find BSV recipient output first
-                let theOutput = action.outputs!.find(o => o.outputDescription === 'BSV for recipient address')
+                const theOutput = action.outputs!.find(o => o.outputDescription === 'BSV for recipient address')
                 if (theOutput) {
                     try {
                         address = Utils.toBase58Check(Script.fromHex(theOutput!.lockingScript!).chunks[2].data as number[])
@@ -335,6 +336,9 @@ const Mountaintops: React.FC = () => {
                 <p style={styles.subtitle}>
                     Address Based BSV Payments to and from BRC-100 Wallets
                 </p>
+                <Link to="/batch" style={{ color: '#3182ce', fontSize: '0.9rem', textDecoration: 'none' }}>
+                    Batch Mode →
+                </Link>
 
                 <Modal
                     open={showDownloadModal}

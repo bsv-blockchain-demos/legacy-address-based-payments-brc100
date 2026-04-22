@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Beef } from '@bsv/sdk';
 import { Services } from '@bsv/wallet-toolbox-client'
 
