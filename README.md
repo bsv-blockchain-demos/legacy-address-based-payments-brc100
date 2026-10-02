@@ -57,4 +57,4 @@ Vite produces static assets in `dist/`. The supplied [Dockerfile](Dockerfile) bu
 
 ## Licence
 
-The existing project documentation identifies OpenBSV as the licence. A separate licence file is not included.
+**Open BSV Licence v6.** See [LICENSE.txt](LICENSE.txt) for the full terms. The licence applies to this project's original code and documentation and restricts use to the BSV blockchain defined in the licence. Third-party code, assets and referenced standards retain their respective terms.
